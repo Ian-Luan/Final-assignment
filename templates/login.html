@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>NeuroID Secure Login</title>
+    <script src="https://cdn.ethers.io/lib/ethers-5.2.umd.min.js"></script>
+</head>
+<body>
+    <div style="text-align:center; margin-top:100px;">
+        <h1>NeuroID Bank</h1>
+        <p>Secure Decentralized Login</p>
+        
+        <button onclick="loginWithWallet()">🔐 Login with Web3 Wallet</button>
+        <p id="status"></p>
+    </div>
+
+    <script>
+        async function loginWithWallet() {
+            if (!window.ethereum) {
+                alert("Please install MetaMask!");
+                return;
+            }
+
+            const provider = new ethers.providers.Web3Provider(window.ethereum);
+            await provider.send("eth_requestAccounts", []);
+            const signer = provider.getSigner();
+            const walletAddress = await signer.getAddress();
+
+            document.getElementById("status").innerText = "Please sign the security message...";
+
+            // 1. Get a distinct message to sign (usually from backend, simplified here)
+            const message = "Login to NeuroID Bank at " + new Date().toISOString();
+
+            // 2. User signs the message with their private key (Passwordless!)
+            try {
+                const signature = await signer.signMessage(message);
+                
+                // 3. Send signature to Backend for verification
+                verifyLogin(walletAddress, signature, message);
+            } catch (err) {
+                document.getElementById("status").innerText = "Login Cancelled.";
+            }
+        }
+
+        async function verifyLogin(address, signature, message) {
+            const response = await fetch('/web3_login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ address, signature, message })
+            });
+            const data = await response.json();
+            
+            if (data.status === "success") {
+                window.location.href = "/dashboard";
+            } else {
+                alert("Security Alert: " + data.message);
+            }
+        }
+    </script>
+</body>
+</html>
