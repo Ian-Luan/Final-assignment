@@ -1,0 +1,4 @@
+Flask
+web3
+eth-account
+openai==0.28
